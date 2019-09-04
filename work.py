@@ -1,5 +1,6 @@
 import requests
 import codecs
+import time
 from bs4 import BeautifulSoup as BS
 
 session = requests.Session()
@@ -12,6 +13,7 @@ base_url = 'https://www.work.ua/jobs-kyiv-python/'
 domain = 'https://www.work.ua'
 jobs = []
 urls = []
+
 urls.append(base_url)
 
 req = session.get(base_url, headers=headers)
@@ -19,30 +21,41 @@ req = session.get(base_url, headers=headers)
 if req.status_code == 200:
     bsObj = BS(req.content, "html.parser")
     pagination = bsObj.find('ul', attrs={'class': 'pagination'})
-    print(pagination)
 
     if pagination:
         pages = pagination.find_all('li', attrs={'class': False})
-        print(pages)
         for page in pages:
             urls.append(domain + page.a['href'])
-# if req.status_code == 200:
-#     bsObj = BS(req.content, "html.parser")
-#     div_list = bsObj.find_all('div', attrs={'class': 'job-link'})
-#     for div in div_list:
-#         title = div.find('h2')
-#         href = title.a['href']
-#         short = div.p.text
-#         company = 'No name'
-#         logo = div.find('img')
-#         if logo:
-#             company = logo['alt']
-#         jobs.append({'href': domain + href,
-#                      'title': title.text,
-#                      'descript': short,
-#                      'company': company})
-#data = bsObj.prettify()
+
+for url in urls:
+    time.sleep(2)
+    if req.status_code == 200:
+        bsObj = BS(req.content, "html.parser")
+        div_list = bsObj.find_all('div', attrs={'class': 'job-link'})
+        for div in div_list:
+            title = div.find('h2')
+            href = title.a['href']
+            short = div.p.text
+            company = 'No name'
+            logo = div.find('img')
+            if logo:
+                company = logo['alt']
+            jobs.append({'href': domain + href,
+                         'title': title.text,
+                         'descript': short,
+                         'company': company})
+template = '<!DOCTYPE html> <html lang="uk"> <head> <meta charset="utf-8"> ' \
+           '</head> <body>'
+end = '</body> <html>'
+content = '<h2> Work.ua </h2>'
+
+for job in jobs:
+    content += '<a href="{href}" target="_blank">{title}</a></br><p>{descript}' \
+               '</p><p>{company}</p></br>'.format(**job)
+    content += '<hr/></br></br>'
+
+data = template + content + end
 
 handle = codecs.open('urls.html', "w", "utf-8")
-handle.write(str(urls))
+handle.write(str(data))
 handle.close()
